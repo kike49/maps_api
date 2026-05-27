@@ -9,7 +9,7 @@ class Location(models.Model):
     formatted_address = models.CharField(max_length=500)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)   # DecimalField not float — floats accumulate rounding error on geo coords
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    place_id = models.CharField(max_length=300, null=True, blank=True, db_index=True)
+    place_id = models.CharField(max_length=300, null=True, blank=True, db_index=True)  # Googlemaps API ID
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

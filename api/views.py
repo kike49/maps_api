@@ -169,6 +169,9 @@ class DistanceView(APIView):
                 destination=dest_loc,
                 defaults={"distance_km": Decimal(str(dist_km))},
             )
+            cached = False
+        else:
+            cached = True
 
         return Response(
             {
@@ -176,6 +179,7 @@ class DistanceView(APIView):
                 "destination": LocationSerializer(dest_loc).data,
                 "distance_km": route.distance_km,
                 "distance_miles": km_to_miles(route.distance_km),
+                "cached": cached,
             },
             status=status.HTTP_200_OK,
         )
