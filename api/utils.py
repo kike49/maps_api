@@ -1,5 +1,6 @@
 import math
 
+from api.conf import MIN_DISTANCE_SEARCH
 from api.models import Location
 from api.services import GoogleMapsService
 
@@ -29,26 +30,32 @@ def km_to_miles(km):
     return round(float(km) * 0.621371, 4)    # 0.621371 miles in a km
 
 
-def get_or_create_location(address):
+def get_or_create_location(address, lat_u, lng_u):
     address_hash = Location.make_hash(address)
-    try:
-        return Location.objects.get(address_hash=address_hash), True
-    except Location.DoesNotExist:
-        pass
+    user_location = lat_u, lng_u
 
-    maps = GoogleMapsService()
-    result = maps.geocode_address(address)
-    if not result:
-        return None, False
+    potential_matches = Location.objects.filter(address_hash=address_hash)
+    # filter the potential_matches by user location
+    for loc in potential_matches.iterator():
+        dist_potential_loc = haversine_km(lat_u, lng_u, loc.latitude, loc.longitude)
+        if dist_potential_loc < MIN_DISTANCE_SEARCH:
+            return loc, True
 
-    location, _ = Location.objects.get_or_create(
-        address_hash=address_hash,
-        defaults={
-            "address_input": address,
-            "formatted_address": result["formatted_address"],
-            "latitude": result["latitude"],
-            "longitude": result["longitude"],
-            "place_id": result.get("place_id"),
-        },
-    )
-    return location, False
+    # call external API
+    if not potential_matches:
+        maps = GoogleMapsService()
+        result = maps.geocode_address(address)
+        if not result:
+            return None, False
+
+        location, _ = Location.objects.get_or_create(
+            address_hash=address_hash,
+            defaults={
+                "address_input": address,
+                "formatted_address": result["formatted_address"],
+                "latitude": result["latitude"],
+                "longitude": result["longitude"],
+                "place_id": result.get("place_id"),
+            },
+        )
+        return location, False

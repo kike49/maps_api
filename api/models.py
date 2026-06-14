@@ -5,10 +5,10 @@ from django.db import models
 # DB-as-cache for geocode results, we store everything here to avoid repeat API calls. dedup key is sha256 of the normalized input
 class Location(models.Model):
     address_input = models.CharField(max_length=500)
-    address_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    address_hash = models.IntegerField(db_index=True)
     formatted_address = models.CharField(max_length=500)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)   # DecimalField not float — floats accumulate rounding error on geo coords
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)      # DecimalField not float — floats accumulate rounding error on geo coords
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)     # IntegerField and strip decimals
     place_id = models.CharField(max_length=300, null=True, blank=True, db_index=True)  # Googlemaps API ID
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -28,7 +28,7 @@ class Location(models.Model):
 
     @classmethod
     def make_hash(cls, address):
-        return hashlib.sha256(cls.normalize(address).encode()).hexdigest()
+        return hashlib.sha256(cls.normalize(address).encode())
 
 
 # cached haversine result between two locations
